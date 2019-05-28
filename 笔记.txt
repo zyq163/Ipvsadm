@@ -68,4 +68,6 @@ TCP  192.168.4.5:80 rr
 7）清空所有规则
 [root@proxy ~]# ipvsadm -C
 
+8)删除一个集群
+root@proxy ~]# ipvsadm -D 
 
