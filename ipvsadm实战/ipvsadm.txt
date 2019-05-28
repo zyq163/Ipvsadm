@@ -1,0 +1,79 @@
+we1服务器
+
+配置IP地址
+n[root@web1 ~]# mcli connection modify eth1 ipv4.method manual ipv4.addresses "192.168.2.10/24" connection.autoconnect yes
+[root@web1 ~]# nmcli connection up eth1
+
+配置永久网关
+[root@web01 ~]# cd /etc/sysconfig/network-scripts/
+[root@web01 network-scripts]# vim ifcfg-eth0
+GATEWAY=192.168.2.5 #添加或修改
+[root@web01 network-scripts]# systemctl restart NetworkManager
+[root@web01 network-scripts]# systemctl restart network
+
+设置Web服务器
+[root@web1 ~]# systemctl -y install httpd
+[root@web1 ~]# echo "<h1>web1</h1>" > /var/www/html/index.html
+启动Web服务器软件
+[root@web1 ~]# systemctl restart httpd
+
+关闭防火墙与SELinux
+[root@web1 ~]# systmctl stop firewalld
+[root@web1 ~]# setenforce 0
+
+==============================================================================
+we2服务器
+
+配置IP地址
+n[root@web1 ~]# mcli connection modify eth1 ipv4.method manual ipv4.addresses "192.168.2.20/24" connection.autoconnect yes
+[root@web1 ~]# nmcli connection up eth1
+
+配置永久网关
+[root@web01 ~]# cd /etc/sysconfig/network-scripts/
+[root@web01 network-scripts]# vim ifcfg-eth0
+GATEWAY=192.168.2.5 #添加或修改
+[root@web01 network-scripts]# systemctl restart NetworkManager
+[root@web01 network-scripts]# systemctl restart network
+
+设置Web服务器
+[root@web1 ~]# systemctl -y install httpd
+[root@web1 ~]# echo "<h1>web2</h1>" > /var/www/html/index.html
+启动Web服务器软件
+[root@web1 ~]# systemctl restart httpd
+
+关闭防火墙与SELinux
+[root@web1 ~]# systmctl stop firewalld
+[root@web1 ~]# setenforce 0
+
+==============================================================================
+proxy02调度器
+
+开启路由转发功能
+[root@proxy ~]# echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
+
+创建集群服务器
+[root@proxy02 ~]# yum -y install ipvsadm
+[root@proxy02 ~]# ipvsadm -A -t 192.168.4.8:80 -s wrr
+[root@proxy02 ~]# ipvsadm -a -t 192.168.4.8:80 -r 192.168.2.10 -w 1 -m
+[root@proxy02 ~]# ipvsadm -a -t 192.168.4.8:80 -r 192.168.2.20 -w 1 -m
+[root@proxy02 ~]# ipvsadm -A -t 192.168.4.8:456 -s wrr
+[root@proxy02 ~]# ipvsadm -a -t 192.168.4.8:456 -r 192.168.2.10:22 -w 1 -m
+[root@proxy02 ~]# ipvsadm -a -t 192.168.4.8:456 -r 192.168.2.20:22 -w 1 -m
+
+查看规则列表，并保存规则
+[root@proxy ~]# ipvsadm -Ln
+[root@proxy ~]# ipvsadm-save -n > /etc/sysconfig/ipvsadm
+
+==============================================================================
+客户端测试
+[root@proxy01 ~]# curl http://192.168.4.8
+[root@proxy01 ~]# ssh -X root@192.168.4.8 -p 456
+
+
+
+
+
+
+
+
+
